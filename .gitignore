@@ -19,8 +19,7 @@ python/.venv/
 .DS_Store
 Thumbs.db
 
-# Logs
+# Logs and error logs
 matlab/log_files/*.log
-
-# Old Shimmer3 driver (keep for reference, don't track binaries)
-matlab/Resources/*.pdf
+matlab/*.log
+matlab/examples/*error_log*
