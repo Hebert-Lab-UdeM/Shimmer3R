@@ -26,25 +26,15 @@ These constants were found in existing MATLAB example code from `Shimmer-MATLAB-
 | `SHIMMER_LSM6DSV_GYRO` | LSM6DSV gyroscope (Shimmer3R) | `plotandwriteexample.m` |
 | `SHIMMER_LIS2MDL_MAG` | LIS2MDL magnetometer (Shimmer3R) | `plotandwriteexample.m` |
 | `HOST_PPG_A13` | PPG via internal ADC A13 (Shimmer3 & Shimmer3R) | `ppgtoheartrateexample.m` |
+| `SHIMMER_GSR` | Galvanic skin response (Shimmer3 & Shimmer3R) | `fieldnames(sensorClass)` — confirmed 2026-07-03 |
 
-### GSR Sensor Constant (Best Estimate, Unconfirmed)
+### GSR Sensor Constant (Confirmed 2026-07-03)
 
-**Expected name:** `SHIMMER_GSR`
+**Name:** `deviceHandler.sensorClass.SHIMMER_GSR`
 
-**Evidence:**
-- The Android API uses `Shimmer.SENSOR_GSR` (bitmask `0x04`)
-- The C# API uses `SENSOR_GSR` in `SensorBitmapShimmer3`
-- The MATLAB examples consistently use `SHIMMER_*` prefix for Shimmer-specific sensors
-- The web SDK constants.ts uses `GSR_NAME = 'GSR'` as the signal name
+Verified via `fieldnames(deviceHandler.sensorClass)` on Windows PC with MATLAB + JARs loaded.
 
-**HOW TO VERIFY:** Run this in MATLAB after loading `ShimmerDeviceHandler`:
-
-```matlab
-deviceHandler = ShimmerDeviceHandler();
-fieldnames(deviceHandler.sensorClass)  % list all sensor ID constants
-```
-
-Look for an entry matching `GSR` or similar. Record the exact name here.
+Also present: `SHIMMER_RESISTANCE_AMP` — raw resistance amplifier sensor, not needed for calibrated GSR output.
 
 ### PPG Sensor Constant (Confirmed)
 
@@ -114,7 +104,23 @@ device object (e.g., `shimmerClone.setInternalExpPower(true)` — exact method n
 
 ---
 
-## 5. Shimmer3R Bluetooth Pairing
+## 5. Shimmer3R-Specific Sensor Constants (for future reference)
+
+Discovered via `fieldnames(deviceHandler.sensorClass)` on 2026-07-03:
+
+| Constant Name | Sensor | Notes |
+|---|---|---|
+| `SHIMMER_LSM6DSV_ACCEL_LN` | Low-noise accelerometer | Replaces `SHIMMER_ANALOG_ACCEL` on Shimmer3 |
+| `SHIMMER_LSM6DSV_GYRO` | Gyroscope | Replaces `SHIMMER_MPU9X50_GYRO` on Shimmer3 |
+| `SHIMMER_LIS2DW12_ACCEL_WR` | Wide-range accelerometer | Shimmer3R-only |
+| `SHIMMER_ADXL371_ACCEL_HIGHG` | High-g accelerometer (200G) | Shimmer3R-only |
+| `SHIMMER_LIS2MDL_MAG` | Primary magnetometer | Replaces `SHIMMER_LSM303_MAG` on Shimmer3 |
+| `SHIMMER_LIS3MDL_MAG_ALT` | Alternate magnetometer | Shimmer3R feature |
+| `SHIMMER_BMP390_PRESSURE` | Barometric pressure | Replaces `SHIMMER_BMPX80_PRESSURE` on Shimmer3 |
+| `SHIMMER_INT_EXP_ADC_A1` | Internal ADC channel 1 | Shimmer3R PPG maps here (was A13 on Shimmer3) |
+| `HOST_PPG2_A1` | PPG derived channel on A1 | Shimmer3R calibrated PPG output |
+
+## 6. Shimmer3R Bluetooth Pairing
 
 Per the C# API Wiki (May 2025):
 
@@ -123,11 +129,9 @@ Per the C# API Wiki (May 2025):
 
 ---
 
-## 6. Open Questions
+## 7. Open Questions
 
-1. **[CRITICAL]** Exact GSR sensor ID constant name in `Configuration$Shimmer3$SENSOR_ID` —
-   verify via `fieldnames(deviceHandler.sensorClass)` in MATLAB on Windows PC with the JARs loaded.
-2. **[MINOR]** Whether internal expansion power is auto-enabled when GSR sensor is configured,
+1. **[MINOR]** Whether internal expansion power is auto-enabled when GSR sensor is configured,
    or requires an explicit call. Test by streaming and checking if PPG signal is non-zero.
-3. **[MINOR]** Exact GSR channel name string returned by `receiveData` on Shimmer3R. Expected
+2. **[MINOR]** Exact GSR channel name string returned by `receiveData` on Shimmer3R. Expected
    `'GSR'` per web SDK; verify on first connection.
