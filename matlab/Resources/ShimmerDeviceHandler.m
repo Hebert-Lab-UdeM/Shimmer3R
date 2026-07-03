@@ -28,7 +28,8 @@ classdef ShimmerDeviceHandler < handle
             
             for i = 1:numel(jarsToAdd)
                 jarPath = jarsToAdd{i};
-                fullJarPath = fullfile(pwd, jarPath);  % Resolve relative to current directory
+                classDefDir = fileparts(mfilename('fullpath'));
+                fullJarPath = fullfile(classDefDir, jarPath);  % Resolve relative to this file's directory
             
                 % Check if the jar is already in classpath (case-insensitive)
                 isInClasspath = any(strcmpi(currentClasspath, fullJarPath));
