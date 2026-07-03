@@ -66,8 +66,10 @@ These are the string names returned by `deviceHandler.obj.receiveData(comPort)` 
 | Channel Name (Shimmer3R) | Channel Name (Shimmer3) | Unit | Format | Source |
 |---|---|---|---|---|
 | `'Timestamp'` | `'Timestamp'` | ms | u24 | `plotandwriteexample.m` |
-| `'GSR'` | `'GSR'` | kohm | u16 | `shimmer-web-sdk/channelFormats.ts` (channel ID 0x1c) |
-| `'PPG_A1'` | `'PPG_A13'` | mV | i16 | `ppgtoheartrateexample.m` + C# API Wiki |
+| `'GSR_Skin_Resistance'` | `'GSR'` | kOhms | u16 | Confirmed 2026-07-03 from live Shimmer3R device |
+| `'GSR_Skin_Conductance'` | — | uS | — | Companion to resistance |
+| `'GSR_Range'` | — | no_units | — | Auto-range indicator |
+| `'PPG_A1'` | `'PPG_A13'` | mV | i16 | Confirmed 2026-07-03 from live Shimmer3R device |
 
 ---
 
@@ -131,7 +133,8 @@ Per the C# API Wiki (May 2025):
 
 ## 7. Open Questions
 
-1. **[MINOR]** Whether internal expansion power is auto-enabled when GSR sensor is configured,
-   or requires an explicit call. Test by streaming and checking if PPG signal is non-zero.
-2. **[MINOR]** Exact GSR channel name string returned by `receiveData` on Shimmer3R. Expected
-   `'GSR'` per web SDK; verify on first connection.
+1. **[MINOR]** Whether internal expansion power is auto-enabled when GSR sensor is configured.
+   PPG signal was present in first test (packets contained non-empty PPG_A1), suggesting
+   auto-enable works. Confirm with longer streaming test.
+2. **[RESOLVED]** GSR channel name confirmed: `'GSR_Skin_Resistance'` (kOhms). Also available:
+   `'GSR_Skin_Conductance'` (uS) and `'GSR_Range'` (no_units).

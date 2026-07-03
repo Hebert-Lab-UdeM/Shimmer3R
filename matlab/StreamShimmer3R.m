@@ -117,20 +117,21 @@ end
 fprintf('[Shimmer3R] Data stream active. Hardware: %s\n', hardwareVersionID);
 
 %% ── Main Data Loop ────────────────────────────────────────────────────────
-% TODO: Task 4 — implement data acquisition loop
-% TODO: Task 5 — implement LSL outlet and push_chunk
-% TODO: Task 6 — implement CSV output
-% TODO: Task 7 — integrate PPG filter
 
-% Placeholder: read a few packets and print channel information for verification.
-fprintf('[Shimmer3R] Reading initial data packets for channel verification ...\n');
-packetCount = 0;
-maxVerificationPackets = 5;
+% Target channel names — confirmed from live Shimmer3R device 2026-07-03.
+%   GSR_Skin_Resistance  → calibrated EDA in kOhms
+%   PPG_A1               → calibrated photoplethysmography in mV
+%   Timestamp             → device-local timestamp in ms
+CHANNEL_TIMESTAMP = 'Timestamp';
+CHANNEL_GSR       = 'GSR_Skin_Resistance';
+CHANNEL_PPG       = 'PPG_A1';
 
+firstPacket = true;
 elapsedTime = 0;
 tic;
 
-while (elapsedTime < captureDuration_s) && (packetCount < maxVerificationPackets)
+while elapsedTime < captureDuration_s
+
     pause(delayPeriod_s);
 
     data = deviceHandler.obj.receiveData(comPort);
@@ -140,36 +141,73 @@ while (elapsedTime < captureDuration_s) && (packetCount < maxVerificationPackets
         continue;
     end
 
-    packetCount = packetCount + 1;
     elapsedTime = elapsedTime + toc;
     tic;
 
+    % Parse the cell array returned by receiveData.
+    %   data{1} → newData    [nSamples × nSignals] double matrix
+    %   data{2} → signalNameArray   Java String array
+    %   data{3} → signalFormatArray Java String array
+    %   data{4} → signalUnitArray   Java String array
     newData         = data(1);
     signalNameArray = data(2);
     signalFormatArray = data(3);
     signalUnitArray   = data(4);
 
-    % Convert Java string arrays to MATLAB cell arrays.
-    nSignals = numel(signalNameArray);
-    signalNames = cell(nSignals, 1);
-    signalFormats = cell(nSignals, 1);
-    signalUnits = cell(nSignals, 1);
-    for i = 1:nSignals
-        signalNames{i}   = char(signalNameArray(i));
-        signalFormats{i}  = char(signalFormatArray(i));
-        signalUnits{i}    = char(signalUnitArray(i));
+    % Convert Java string arrays to MATLAB cell arrays on first packet
+    % so we can match channel names with ismember().
+    if firstPacket
+        nSignals = numel(signalNameArray);
+        signalNames = cell(nSignals, 1);
+        signalFormats = cell(nSignals, 1);
+        signalUnits = cell(nSignals, 1);
+        for i = 1:nSignals
+            signalNames{i}  = char(signalNameArray(i));
+            signalFormats{i} = char(signalFormatArray(i));
+            signalUnits{i}   = char(signalUnitArray(i));
+        end
+
+        fprintf('[Shimmer3R] Stream active — %d channels:\n', nSignals);
+        for i = 1:nSignals
+            fprintf('  %2d: %-28s  %-6s  [%s]\n', i, signalNames{i}, signalFormats{i}, signalUnits{i});
+        end
+
+        % Find column indices for our target channels.
+        idxTimestamp = find(ismember(signalNames, CHANNEL_TIMESTAMP), 1);
+        idxGSR       = find(ismember(signalNames, CHANNEL_GSR), 1);
+        idxPPG       = find(ismember(signalNames, CHANNEL_PPG), 1);
+
+        if isempty(idxTimestamp) || isempty(idxGSR) || isempty(idxPPG)
+            error('StreamShimmer3R:missingChannel', ...
+                  'Required channels not found in signal list.\n' + ...
+                  '  Expected: %s, %s, %s', ...
+                  CHANNEL_TIMESTAMP, CHANNEL_GSR, CHANNEL_PPG);
+        end
+
+        fprintf('[Shimmer3R] Column indices — Timestamp:%d  GSR:%d  PPG:%d\n', ...
+                idxTimestamp, idxGSR, idxPPG);
+
+        firstPacket = false;
     end
 
-    fprintf('[Shimmer3R] --- Packet %d: %d signals, %d samples ---\n', ...
-            packetCount, nSignals, size(newData, 1));
-    for i = 1:nSignals
-        fprintf('  %-25s  %-6s  [%s]\n', signalNames{i}, signalFormats{i}, signalUnits{i});
-    end
-end
+    % Extract our target channels.
+    timestamps       = newData(:, idxTimestamp);
+    edaCalibrated    = newData(:, idxGSR);
+    ppgCalibrated    = newData(:, idxPPG);
 
-if packetCount == 0
-    warning('StreamShimmer3R:noData', 'No data packets received from device.');
-end
+    % ── PPG Filter (Task 7 stub) ─────────────────────────────────────
+    ppgFiltered = ppgCalibrated;  % pass-through placeholder
+
+    % ── LSL push_chunk (Task 5 stub) ─────────────────────────────────
+    % outlet.push_chunk([edaCalibrated'; ppgFiltered']);
+
+    % ── CSV append (Task 6 stub) ─────────────────────────────────────
+    % dlmwrite(csvFilePath, [timestamps edaCalibrated ppgCalibrated ppgFiltered], ...
+    %          '-append', 'delimiter', '\t', 'precision', 16);
+
+end  % main data loop
+
+fprintf('[Shimmer3R] Streaming loop ended. Elapsed time: %.1f s\n', elapsedTime);
 
 %% ── Teardown ──────────────────────────────────────────────────────────────
 
