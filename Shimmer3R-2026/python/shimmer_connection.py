@@ -306,16 +306,23 @@ def query_device_info(
         ValueError: If device label doesn't match expected value
     """
     
-    # Get hardware version
-    hw_version = shimmer.hardware_version
-    hw_version_str = hw_version.value if hasattr(hw_version, 'value') else str(hw_version)
+    # Get hardware version (method call, not property)
+    try:
+        hw_version = shimmer.get_device_hardware_version()
+        hw_version_str = str(hw_version)
+    except Exception as e:
+        hw_version_str = f'unknown ({e})'
     
-    # Get firmware info
-    fw_type, fw_version = shimmer.firmware_type, shimmer.firmware_version
-    fw_type_str = fw_type.value if hasattr(fw_type, 'value') else str(fw_type)
-    fw_version_str = str(fw_version) if fw_version else 'unknown'
+    # Get firmware info (method calls, not properties)
+    try:
+        fw_type, fw_version = shimmer.get_firmware_version()
+        fw_type_str = str(fw_type)
+        fw_version_str = str(fw_version)
+    except Exception:
+        fw_type_str = 'unknown'
+        fw_version_str = 'unknown'
     
-    # Get device name (may be custom or default)
+    # Get device name
     try:
         device_name = shimmer.get_device_name()
     except Exception:
@@ -336,10 +343,6 @@ def query_device_info(
         device_label=expected_label,
         sampling_rate_hz=sampling_rate,
     )
-    
-    # Verify device label matches expected
-    # Note: pyshimmer doesn't directly read the label from hardware,
-    # so we just store what was provided for logging purposes
     
     return device_info
 
