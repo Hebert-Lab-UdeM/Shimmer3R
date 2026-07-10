@@ -95,31 +95,32 @@ def enumerate_com_ports():
     return bluetooth_ports, shimmer_candidates
 
 
-def test_shimmer_handshake(port_name: str, timeout: float = 2.0) -> tuple[bool, dict]:
+def test_shimmer_handshake(port_name: str) -> tuple[bool, dict]:
     """Attempt to communicate with a Shimmer device on the given COM port.
     
     This sends Shimmer LogAndStream protocol commands and checks for valid responses.
     
     Args:
         port_name: COM port name (e.g., 'COM4')
-        timeout: Serial timeout in seconds
         
     Returns:
         tuple: (success: bool, info: dict with device info if successful)
     """
-    print(f"Testing {port_name} for Shimmer device...")
+    print(f"Testing {port_name} for Shimmer device...", end=" ", flush=True)
     
     try:
         # Standard baud rate for Shimmer LogAndStream firmware
         BAUD_RATE = 115200
         
+        # Use very short timeout - we just want to see if device responds quickly
         ser = serial.Serial(
             port=port_name,
             baudrate=BAUD_RATE,
-            timeout=timeout,
+            timeout=0.5,  # 500ms timeout
             bytesize=serial.EIGHTBITS,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
+            write_timeout=0.5,
         )
         
         # Clear buffers
@@ -128,23 +129,21 @@ def test_shimmer_handshake(port_name: str, timeout: float = 2.0) -> tuple[bool, 
         
         # Shimmer LogAndStream protocol: send CMD_GET_DEVICE_INFO (0x09)
         # This should return device information if it's a Shimmer
-        # Command format: [command_byte]
         ser.write(b'\x09')
         
-        # Wait for response
-        # Shimmer should respond with: [ACK, command_id, data_length, data..., checksum]
-        response = ser.read(100)  # Read up to 100 bytes
+        # Wait briefly for response
+        import time
+        time.sleep(0.1)  # Give device 100ms to respond
+        
+        # Read available response (non-blocking due to timeout)
+        response = ser.read(100)
         
         ser.close()
         
         if len(response) >= 3:
             # Check if response starts with ACK (0x00 or 0x01 depending on firmware)
             if response[0] in [0x00, 0x01, 0x09]:
-                print(f"  ✓ {port_name} responded with valid Shimmer protocol")
-                print(f"    Response: {len(response)} bytes, first bytes: {response[:10].hex()}")
-                
-                # Try to extract hardware version from response
-                # This is a simplified check; full parsing would require protocol knowledge
+                print(f"✓ Shimmer detected ({len(response)} bytes)")
                 info = {
                     'port': port_name,
                     'response_length': len(response),
@@ -152,18 +151,20 @@ def test_shimmer_handshake(port_name: str, timeout: float = 2.0) -> tuple[bool, 
                 }
                 return True, info
             else:
-                print(f"  ⚠ {port_name} responded but not with Shimmer protocol (first byte: 0x{response[0]:02x})")
+                print(f"⚠ Responded but not Shimmer protocol (0x{response[0]:02x})")
                 return False, {}
         else:
-            print(f"  ⚠ {port_name} opened but did not respond to Shimmer handshake")
-            print(f"    (Device may be asleep, out of range, already connected, or not a Shimmer)")
+            print(f"⚠ No response (port may be in use or device unavailable)")
             return False, {}
             
     except serial.SerialException as e:
-        print(f"  ✗ Failed to open {port_name}: {e}")
+        print(f"✗ Serial error: {e}")
         return False, {}
     except OSError as e:
-        print(f"  ✗ OS error accessing {port_name}: {e}")
+        print(f"✗ OS error: {e}")
+        return False, {}
+    except Exception as e:
+        print(f"✗ Unexpected error: {e}")
         return False, {}
 
 
@@ -174,6 +175,16 @@ def main():
     print("\nNOTE: Windows labels all Bluetooth serial ports generically.")
     print("This test will try Shimmer protocol on each Bluetooth COM port")
     print("to identify which one(s) are Shimmer devices.\n")
+    
+    # Handle Ctrl-C gracefully
+    import signal
+    import sys
+    
+    def signal_handler(sig, frame):
+        print("\n\n⚠ Test interrupted by user")
+        sys.exit(0)
+    
+    signal.signal(signal.SIGINT, signal_handler)
     
     # Step 1: Enumerate all COM ports
     bluetooth_ports, shimmer_candidates = enumerate_com_ports()
