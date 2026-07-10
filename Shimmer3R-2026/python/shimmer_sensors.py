@@ -20,8 +20,8 @@ Requirements:
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 
-from pyshimmer import ESensorGroup, EChannelType
 from pyshimmer.bluetooth.bt_commands import DataPacket
+from pyshimmer.dev.channels import ESensorGroup, EChannelType
 
 
 @dataclass
