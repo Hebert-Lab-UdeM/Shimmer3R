@@ -18,7 +18,8 @@ Requirements:
 
 import sys
 import serial
-from pyshimmer import ShimmerBluetooth, ESensorGroup
+from pyshimmer import ShimmerBluetooth
+from pyshimmer.dev.channels import ESensorGroup
 
 
 def test_connection(com_port: str):
