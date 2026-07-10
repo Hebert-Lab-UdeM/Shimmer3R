@@ -1,0 +1,36 @@
+# Phase 2 Dependencies: Python + pyshimmer (Classic Bluetooth RFCOMM)
+# Created: 2026-07-10
+# Target: Shimmer3R GSR+PPG streaming over Classic Bluetooth
+
+# Core Shimmer communication
+# pyshimmer provides LogAndStream protocol implementation for Shimmer3/3R
+# Version 1.0.0 (Oct 2025) includes Shimmer3R support
+pyshimmer>=1.0.0
+
+# Serial communication for RFCOMM Bluetooth
+# Used by pyshimmer internally; explicit version for reproducibility
+pyserial>=3.5
+
+# Lab Streaming Layer for real-time data streaming
+# Matches Phase 1 LSL functionality
+pylsl>=1.16.0
+
+# Signal processing for PPG filtering
+# scipy.signal.cheby1 for Chebyshev Type I filter design
+scipy>=1.11.0
+
+# Numerical operations
+numpy>=1.24.0
+
+# Windows Bluetooth RFCOMM support
+# pybluez is Linux-only; on Windows, pyserial handles RFCOMM natively
+# Include for Linux compatibility; Windows users can ignore
+# pybluez-ng>=1.0  # Uncomment if deploying on Linux
+
+# Development / testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Optional: type checking
+# mypy>=1.5.0
+# types-pyserial>=3.5.0
