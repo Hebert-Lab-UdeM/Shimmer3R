@@ -101,14 +101,16 @@ def configure_sensors(
     
     # Sensors to enable:
     #   - GSR: Galvanic Skin Response (EDA) sensor on SR48 daughter board
-    #   - INT_CH_A1: Internal ADC Channel A1 (PPG on Shimmer3R)
+    #   - CH_A1: Internal ADC Channel A1 (PPG on Shimmer3R)
     #
     # Note: On Shimmer3R, PPG is mapped to Internal ADC A1
     #       On original Shimmer3, PPG was on Internal ADC A13
     #       pyshimmer handles this mapping internally
+    #
+    # pyshimmer 1.0.0 (PyPI) uses CH_A1 instead of INT_CH_A1
     enabled_sensors = [
         ESensorGroup.GSR,
-        ESensorGroup.INT_CH_A1,
+        ESensorGroup.CH_A1,
     ]
     
     try:
@@ -373,9 +375,10 @@ def verify_sensor_config(shimmer, expected_sensors: List[ESensorGroup]) -> bool:
         expected_channels = set()
         for sensor in expected_sensors:
             # Map sensor groups to channel types
+            # pyshimmer 1.0.0 (PyPI) naming
             if sensor == ESensorGroup.GSR:
                 expected_channels.add(EChannelType.GSR_RAW)
-            elif sensor == ESensorGroup.INT_CH_A1:
+            elif sensor == ESensorGroup.CH_A1:
                 expected_channels.add(EChannelType.INTERNAL_ADC_A1)
         
         # Always expect timestamp
