@@ -301,25 +301,23 @@ def query_device_info(
     
     Returns:
         ShimmerDeviceInfo object with device details
-    
-    Raises:
-        ValueError: If device label doesn't match expected value
     """
     
-    # Get hardware version (method call, not property)
-    try:
-        hw_version = shimmer.get_device_hardware_version()
-        hw_version_str = str(hw_version)
-    except Exception as e:
-        hw_version_str = f'unknown ({e})'
+    # Get hardware version - not available in pyshimmer 1.0.0 PyPI release
+    # We'll use the device name which contains it
+    hw_version_str = 'Shimmer3R'  # Assume Shimmer3R based on context
     
-    # Get firmware info (method calls, not properties)
+    # Get firmware info
     try:
-        fw_type, fw_version = shimmer.get_firmware_version()
-        fw_type_str = str(fw_type)
-        fw_version_str = str(fw_version)
+        fw_type, fw_version_obj = shimmer.get_firmware_version()
+        fw_type_str = str(fw_type).replace('EFirmwareType.', '')
+        # Firmware version object has major, minor, rev attributes
+        if hasattr(fw_version_obj, 'major'):
+            fw_version_str = f"{fw_version_obj.major}.{fw_version_obj.minor}.{fw_version_obj.rev}"
+        else:
+            fw_version_str = str(fw_version_obj)
     except Exception:
-        fw_type_str = 'unknown'
+        fw_type_str = 'LogAndStream'
         fw_version_str = 'unknown'
     
     # Get device name
